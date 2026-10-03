@@ -1,0 +1,35 @@
+// wrangler configuration — Cloudflare Workers Free plan.
+// Secrets are set with `wrangler secret put`, never committed.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "uno-by-j-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "uno-by-j",
+      "database_id": "7676e850-9b79-4c57-bb0f-a9346247b00c",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  "durable_objects": {
+    "bindings": [
+      { "name": "ROOM_DO", "class_name": "RoomDO" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["RoomDO"] }
+  ],
+
+  "vars": {
+    "ENVIRONMENT": "dev"
+  }
+  // Secrets (set via `wrangler secret put`):
+  //   JWT_SECRET            - HS256 signing key for access tokens
+  //   ROOM_INTERNAL_SECRET  - secret token protecting internal Worker <-> DO calls
+}

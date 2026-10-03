@@ -1,0 +1,5 @@
+<resources>
+    <!-- Splash/window background: deep ink blue used across the app. -->
+    <color name="window_background">#0E1220</color>
+    <color name="ic_launcher_background">#101528</color>
+</resources>

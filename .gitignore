@@ -1,0 +1,30 @@
+# Gradle & Android build outputs
+.gradle/
+build/
+**/build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+
+# Local properties & keystores (never commit secrets)
+local.properties
+keystore.properties
+*.keystore
+*.jks
+
+# IDE & Editor files
+.idea/
+.vscode/
+*.iml
+.kotlin/
+.DS_Store
+
+# Node & Cloudflare Worker artifacts
+node_modules/
+.wrangler/
+dist/
+*.log
+.dev.vars
+.env
