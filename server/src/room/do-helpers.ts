@@ -28,8 +28,8 @@ export const INTERNAL_SECRET_HEADER = "x-internal-secret";
 
 /** Room/lifecycle events the DO synthesizes (docs/PROTOCOL.md EVENT kinds). */
 export type RoomEvent =
-  | { kind: "PLAYER_JOINED"; userId: string; displayName: string }
-  | { kind: "PLAYER_LEFT"; userId: string }
+  | { kind: "PLAYER_JOINED"; userId: string; displayName: string; room?: RoomView }
+  | { kind: "PLAYER_LEFT"; userId: string; room?: RoomView }
   | { kind: "PLAYER_DISCONNECTED"; userId: string }
   | { kind: "PLAYER_RECONNECTED"; userId: string }
   | { kind: "ROOM_UPDATED"; room: RoomView }

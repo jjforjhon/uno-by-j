@@ -242,14 +242,23 @@ export class RoomDO {
         await this.persistAll();
         await this.broadcast(events, now);
       }
-      await this.broadcast({ kind: "PLAYER_LEFT", userId: body.userId }, now);
+      await this.broadcast(
+        [
+          { kind: "PLAYER_LEFT", userId: body.userId, room: body.room },
+          { kind: "ROOM_UPDATED", room: body.room },
+        ],
+        now
+      );
       return Response.json({ ok: true });
     }
 
     // PLAYER_JOINED: lobby event always; engine seat only for a live round
     // with room to spare (late joiners get cards at the next round start).
     await this.broadcast(
-      { kind: "PLAYER_JOINED", userId: body.userId, displayName: name },
+      [
+        { kind: "PLAYER_JOINED", userId: body.userId, displayName: name, room: body.room },
+        { kind: "ROOM_UPDATED", room: body.room },
+      ],
       now
     );
     if (
@@ -545,6 +554,25 @@ export class RoomDO {
     });
     const snapshot = await this.snapshotFor(userId, code);
     if (snapshot) this.send(conn.ws, snapshot);
+
+    // 6. Broadcast updated room view to all other connected sockets in the room
+    // so existing lobby members immediately see the newly joined / reconnected player.
+    const roomFromSnap = snapshot?.d && "room" in (snapshot.d as Record<string, unknown>)
+      ? ((snapshot.d as Record<string, unknown>).room as RoomView)
+      : null;
+    const freshRoom = roomFromSnap ?? (await this.findRoomView(code));
+    if (freshRoom) {
+      for (const ws of this.state.getWebSockets()) {
+        if (ws !== conn.ws && getAttachment(ws).userId) {
+          this.send(ws, {
+            v: PROTOCOL_VERSION,
+            type: "EVENT",
+            seq: this.seq,
+            d: { kind: "ROOM_UPDATED", room: freshRoom },
+          });
+        }
+      }
+    }
   }
 
   private async onSyncReq(conn: Conn, msg: { reqId: string; sinceSeq: number }): Promise<void> {

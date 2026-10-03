@@ -175,6 +175,13 @@ class GameRepository @Inject constructor(
             "ROOM_UPDATED" -> {
                 ev.room?.let { _activeRoom.value = it }
             }
+            "PLAYER_JOINED" -> {
+                if (ev.room != null) {
+                    _activeRoom.value = ev.room
+                } else {
+                    scope.launch { refreshActiveRoom() }
+                }
+            }
             "PLAYER_DISCONNECTED" -> {
                 val current = _activeGame.value
                 val userId = ev.userId
@@ -198,6 +205,11 @@ class GameRepository @Inject constructor(
                 }
             }
             "PLAYER_LEFT_GAME", "PLAYER_LEFT" -> {
+                if (ev.room != null) {
+                    _activeRoom.value = ev.room
+                } else {
+                    scope.launch { refreshActiveRoom() }
+                }
                 val current = _activeGame.value
                 val userId = ev.userId
                 if (current != null && userId != null) {
@@ -290,6 +302,15 @@ class GameRepository @Inject constructor(
     suspend fun fetchMyRooms(): Result<List<RoomView>> {
         val token = sessionStore.getAccessToken() ?: return Result.failure(IllegalStateException("Not authenticated"))
         return api.getMyRooms(token)
+    }
+
+    suspend fun refreshActiveRoom(): Result<RoomView> {
+        val code = _activeRoom.value?.code ?: return Result.failure(IllegalStateException("No active room"))
+        val token = sessionStore.getAccessToken() ?: return Result.failure(IllegalStateException("Not authenticated"))
+        val result = api.getRoom(token, code)
+        return result.onSuccess { updated ->
+            _activeRoom.value = updated
+        }
     }
 
     private fun connectToRoomWs(code: String, token: String) {

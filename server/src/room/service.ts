@@ -12,6 +12,7 @@ import { AppError, ErrorCode } from "../domain/errors";
 import type { User } from "../domain/types";
 import { generateRoomCode } from "./codes";
 import { randomId } from "../util/crypto";
+import { INTERNAL_SECRET_HEADER } from "./do-helpers";
 
 export const ROOM_CREATE_LIMIT = 3;      // per user per hour
 export const QUICKPLAY_TICKET_LIMIT = 1; // active tickets per user per hour
@@ -25,6 +26,7 @@ export interface RoomServiceDeps {
   limiter: RateLimiter;
   /** Maps a room code to its DO stub; optional so unit tests can omit it. */
   roomStub?: (code: string) => { fetch: (url: string, init: { method: string; body: string; headers: Record<string, string> }) => Promise<unknown> };
+  internalSecret?: string;
   nowMs?: () => number;
 }
 
@@ -244,10 +246,14 @@ export class RoomService {
       const stub = this.d.roomStub?.(room.code);
       if (!stub) return;
       const roomView = await this.view(room);
+      const headers: Record<string, string> = { "content-type": "application/json" };
+      if (this.d.internalSecret) {
+        headers[INTERNAL_SECRET_HEADER] = this.d.internalSecret;
+      }
       await stub.fetch("https://room.internal/notify", {
         method: "POST",
         body: JSON.stringify({ kind, userId, room: roomView }),
-        headers: { "content-type": "application/json" },
+        headers,
       });
     } catch {
       // Never fail the HTTP request because a lobby notification failed.

@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Button
 import com.j.uno.ui.chat.ChatSheet
@@ -611,13 +612,30 @@ private fun RoomWaitingLobbyContent(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Room Code Header
-            Text(
-                text = "ROOM LOBBY",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                color = ChromaPalette.Yellow,
-                letterSpacing = 2.sp
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "ROOM LOBBY",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = ChromaPalette.Yellow,
+                    letterSpacing = 2.sp
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                IconButton(
+                    onClick = { viewModel.refreshRoom() },
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Refresh Room",
+                        tint = ChromaPalette.Yellow.copy(alpha = 0.8f),
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
 

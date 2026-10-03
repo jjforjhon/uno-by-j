@@ -83,7 +83,24 @@ class LobbyViewModel @Inject constructor(
             }
         }
 
+        viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(3500L)
+                val active = _uiState.value.activeRoom
+                val playing = _uiState.value.isGameActive
+                if (active != null && !playing) {
+                    repository.refreshActiveRoom()
+                }
+            }
+        }
+
         refreshMyRooms()
+    }
+
+    fun refreshRoom() {
+        viewModelScope.launch {
+            repository.refreshActiveRoom()
+        }
     }
 
     fun onRoomCodeChanged(code: String) {

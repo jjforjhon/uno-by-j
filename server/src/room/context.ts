@@ -12,5 +12,6 @@ export function getRoomService(env: Env): RoomService {
     events: new D1SecurityEventRepo(env.DB),
     limiter: new CacheRateLimiter("room"),
     roomStub: (code) => env.ROOM_DO.get(env.ROOM_DO.idFromName(code)),
+    internalSecret: env.ROOM_INTERNAL_SECRET,
   });
 }
