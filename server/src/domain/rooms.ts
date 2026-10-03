@@ -7,7 +7,7 @@ export interface RoomSettings {
 export const DEFAULT_ROOM_SETTINGS: RoomSettings = {
   matchMode: false,
   stacking: false,
-  turnTimeoutS: 30,
+  turnTimeoutS: 0,
 };
 
 export const MIN_PLAYERS = 2;

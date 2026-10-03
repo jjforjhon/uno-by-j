@@ -98,7 +98,7 @@ function advanceTurn(state: GameState, now: number): void {
   state.currentPlayerIndex = nextActiveIndex(state, state.currentPlayerIndex);
   state.drawnThisTurn = false;
   state.turnSeq += 1;
-  state.turnDeadlineAt = now + state.settings.turnTimeoutS * 1000;
+  state.turnDeadlineAt = state.settings.turnTimeoutS > 0 ? now + state.settings.turnTimeoutS * 1000 : 0;
 }
 
 /** Draw up to n cards, reshuffling the discard pile when needed (RULES §5). */

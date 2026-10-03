@@ -69,7 +69,7 @@ fun UnoAppNavHost(
 
     val currentDestination = when {
         !authState.isAuthenticated -> AppDestination.AUTH
-        gameState.topCard != null || lobbyState.isGameActive -> AppDestination.GAME
+        lobbyState.activeRoom != null && (gameState.topCard != null || lobbyState.isGameActive) -> AppDestination.GAME
         else -> AppDestination.LOBBY
     }
 
@@ -111,6 +111,7 @@ fun UnoAppNavHost(
                 GameScreen(
                     viewModel = gameViewModel,
                     onLeaveGame = {
+                        gameViewModel.leaveGame()
                         lobbyViewModel.leaveRoom()
                     }
                 )

@@ -2,6 +2,8 @@ package com.j.uno.ui.game
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.j.uno.audio.SoundEffect
+import com.j.uno.audio.SoundManager
 import com.j.uno.data.GameRepository
 import com.j.uno.model.CardColor
 import com.j.uno.model.CardKind
@@ -51,7 +53,8 @@ data class GameUiState(
 
 @HiltViewModel
 class GameViewModel @Inject constructor(
-    private val repository: GameRepository
+    private val repository: GameRepository,
+    private val soundManager: SoundManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(GameUiState())
@@ -87,7 +90,20 @@ class GameViewModel @Inject constructor(
                 if (game != null) {
                     val myId = repository.currentUser.value?.id.orEmpty()
                     val isMyTurn = (game.currentPlayerId == myId)
+                    val wasMyTurn = _uiState.value.isMyTurn
+                    val oldTop = _uiState.value.topCard
+                    val oldDraw = _uiState.value.drawPileCount
                     val opponents = game.players.filter { it.userId != myId }
+
+                    // Sound cues on game changes
+                    if (!wasMyTurn && isMyTurn) {
+                        soundManager.play(SoundEffect.YOUR_TURN)
+                    }
+                    if (oldTop != null && game.topCard.id != oldTop.id) {
+                        soundManager.play(SoundEffect.CARD_PLAY)
+                    } else if (oldDraw > 0 && game.drawPileCount < oldDraw) {
+                        soundManager.play(SoundEffect.CARD_DRAW)
+                    }
 
                     _uiState.update {
                         it.copy(
@@ -107,12 +123,34 @@ class GameViewModel @Inject constructor(
                     startCountdownTimer(game.turnDeadlineAt)
                 } else {
                     stopCountdownTimer()
+                    _uiState.update {
+                        it.copy(
+                            topCard = null,
+                            myHand = emptyList(),
+                            playableCardIds = emptySet(),
+                            canPass = false,
+                            isMyTurn = false,
+                            opponents = emptyList(),
+                            roundResult = null,
+                            activeColor = null,
+                            pendingColorSelectionCard = null,
+                            alertMessage = null
+                        )
+                    }
                 }
             }
         }
 
         viewModelScope.launch {
             repository.roundEnded.collect { result ->
+                if (result != null) {
+                    val myId = repository.currentUser.value?.id.orEmpty()
+                    if (result.winnerUserId == myId) {
+                        soundManager.play(SoundEffect.VICTORY)
+                    } else {
+                        soundManager.play(SoundEffect.ROUND_LOST)
+                    }
+                }
                 _uiState.update { it.copy(roundResult = result) }
             }
         }
@@ -171,9 +209,16 @@ class GameViewModel @Inject constructor(
     }
 
     fun onCardClicked(card: UnoCard) {
-        if (!_uiState.value.isMyTurn) return
-        if (card.id !in _uiState.value.playableCardIds) return
+        if (!_uiState.value.isMyTurn) {
+            soundManager.play(SoundEffect.ERROR)
+            return
+        }
+        if (card.id !in _uiState.value.playableCardIds) {
+            soundManager.play(SoundEffect.ERROR)
+            return
+        }
 
+        soundManager.play(SoundEffect.CARD_PLAY)
         if (card.kind == CardKind.WILD || card.kind == CardKind.WILD4) {
             // Require inline color choice
             _uiState.update { it.copy(pendingColorSelectionCard = card) }
@@ -185,28 +230,37 @@ class GameViewModel @Inject constructor(
     fun onColorChosen(color: CardColor) {
         val card = _uiState.value.pendingColorSelectionCard ?: return
         _uiState.update { it.copy(pendingColorSelectionCard = null) }
+        soundManager.play(SoundEffect.CARD_PLAY)
         repository.playCard(card, color)
     }
 
     fun dismissColorPicker() {
+        soundManager.play(SoundEffect.CLICK)
         _uiState.update { it.copy(pendingColorSelectionCard = null) }
     }
 
     fun onDrawClicked() {
-        if (!_uiState.value.isMyTurn) return
+        if (!_uiState.value.isMyTurn) {
+            soundManager.play(SoundEffect.ERROR)
+            return
+        }
+        soundManager.play(SoundEffect.CARD_DRAW)
         repository.drawCard()
     }
 
     fun onPassClicked() {
         if (!_uiState.value.isMyTurn || !_uiState.value.canPass) return
+        soundManager.play(SoundEffect.CLICK)
         repository.pass()
     }
 
     fun onCallUnoClicked() {
+        soundManager.play(SoundEffect.UNO_CALL)
         repository.callUno()
     }
 
     fun onCatchUnoClicked(targetUserId: String) {
+        soundManager.play(SoundEffect.UNO_CALL)
         repository.catchUno(targetUserId)
     }
 
@@ -220,6 +274,7 @@ class GameViewModel @Inject constructor(
     }
 
     fun startNextRound() {
+        soundManager.play(SoundEffect.CLICK)
         viewModelScope.launch {
             val res = repository.startRoom()
             if (res.isFailure) {
@@ -233,6 +288,9 @@ class GameViewModel @Inject constructor(
     }
 
     fun leaveGame() {
+        soundManager.play(SoundEffect.CLICK)
+        stopCountdownTimer()
+        _uiState.value = GameUiState()
         repository.leaveRoom()
     }
 

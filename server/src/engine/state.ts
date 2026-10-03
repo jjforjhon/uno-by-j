@@ -65,7 +65,7 @@ export function startGame(opts: StartOptions): GameState {
     discardPile: [topCard],
     pendingUno: null,
     turnSeq: 1,
-    turnDeadlineAt: opts.now + opts.settings.turnTimeoutS * 1000,
+    turnDeadlineAt: opts.settings.turnTimeoutS > 0 ? opts.now + opts.settings.turnTimeoutS * 1000 : 0,
     drawnThisTurn: false,
     winnerUserId: null,
     lastScores: null,

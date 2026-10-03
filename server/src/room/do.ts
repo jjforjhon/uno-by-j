@@ -198,7 +198,7 @@ export class RoomDO {
       roomCode: opts.roomCode,
       players,
       settings: {
-        turnTimeoutS: opts.settings.turnTimeoutS > 0 ? opts.settings.turnTimeoutS : 30,
+        turnTimeoutS: opts.settings.turnTimeoutS > 0 ? opts.settings.turnTimeoutS : 0,
       },
       now,
       rng: cryptoRng(),
@@ -749,7 +749,7 @@ export class RoomDO {
     const now = Date.now();
     const candidates: number[] = [];
 
-    if (this.game && this.game.status === "PLAYING") {
+    if (this.game && this.game.status === "PLAYING" && this.game.turnDeadlineAt > 0) {
       candidates.push(this.game.turnDeadlineAt);
     }
     let pendingHello = false;
@@ -789,7 +789,7 @@ export class RoomDO {
     }
 
     // 2. Turn deadline: stale alarms ignored inside the engine.
-    if (this.game && this.game.status === "PLAYING" && now >= this.game.turnDeadlineAt) {
+    if (this.game && this.game.status === "PLAYING" && this.game.turnDeadlineAt > 0 && now >= this.game.turnDeadlineAt) {
       const events = apply(this.game, { type: "TIMEOUT_TURN" }, now, cryptoRng());
       await this.broadcast(events, now);
       await this.persistAll();

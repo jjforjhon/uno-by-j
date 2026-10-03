@@ -587,15 +587,7 @@ private fun GameCenterTable(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Turn Timer Bar
-            if (uiState.turnDeadlineAt > 0L) {
-                TurnTimerBar(
-                    secondsRemaining = uiState.secondsRemaining,
-                    maxSeconds = 30
-                )
-            }
+            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }
